@@ -22,7 +22,7 @@
   *{box-sizing:border-box}
   html,body{margin:0;overflow:hidden;background:radial-gradient(1200px 600px at 50% -10%,#1a1d2b 0%,var(--bg) 60%);color:var(--ink);min-height:100%}
   body{font:600 12px/1.2 "Barlow Condensed","Arial Narrow",Arial,sans-serif;letter-spacing:.06em;overflow-x:hidden}
-  #fit{padding:20px 0;display:flex;justify-content:center}
+  #fit{padding:20px 0;display:flex;justify-content:center;align-items:flex-start}
   #stage{width:1260px;transform-origin:top center;flex:none}
 
   .synth{background:linear-gradient(180deg,#24272e 0%,var(--body) 18%,var(--body2) 100%);border:1px solid #000;border-radius:12px;
@@ -1232,6 +1232,7 @@ const stage = document.getElementById('stage'), fit = document.getElementById('f
 function fitStage(){
   const pad = BOARD ? 6 : 12, W = window.innerWidth - 2 * pad, H = window.innerHeight - 2 * pad;
   fit.style.padding = pad + 'px 0';
+  fit.style.height = '';                       // measure the synth itself, never the last fitted size
   stage.style.width = '1260px'; stage.style.setProperty('--kbh', '132px');
   const h0 = stage.offsetHeight;
   const s = Math.max(0.2, Math.min(2.2, W / 1260, H / h0));
@@ -1241,7 +1242,14 @@ function fitStage(){
   stage.style.transform = `scale(${s})`;
   fit.style.height = (stage.offsetHeight * s + 2 * pad) + 'px';
 }
-window.addEventListener('resize', fitStage); fitStage();
+let fitQ = 0;
+const refit = () => { cancelAnimationFrame(fitQ); fitQ = requestAnimationFrame(fitStage); };
+window.addEventListener('resize', refit); fitStage();
+// the window of an installed app, and the web fonts, can settle after the first fit
+if (window.ResizeObserver) new ResizeObserver(refit).observe(document.documentElement);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
+addEventListener('load', refit); addEventListener('pageshow', refit);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refit(); });
 if (!BOARD && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => {}); });   // update(): check for a new version right away
 </script>
 </body>

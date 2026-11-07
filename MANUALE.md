@@ -78,7 +78,7 @@ Vega è un modulo della board, con prese **MIDI**, **CLK** e **OUT**.
 Il service worker richiede `http://localhost` o `https://`:
 
 ```bash
-cd "v7 (1.1.0)"
+cd "v8 (1.1.1)"
 python3 -m http.server 8000
 # apri http://localhost:8000 in Chrome → menu ⋮ → Installa S33 - Vega
 ```

@@ -26,7 +26,7 @@ Made for **Chrome on the Mac** with a MIDI keyboard. It is a **PWA** in a single
 ### Install as an app
 
 ```bash
-cd "v7 (1.1.0)"
+cd "v8 (1.1.1)"
 python3 -m http.server 8000
 # open http://localhost:8000 in Chrome → ⋮ menu → Install S33 - Vega
 ```
