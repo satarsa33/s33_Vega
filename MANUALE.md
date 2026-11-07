@@ -28,11 +28,26 @@ Da sinistra a destra, come il percorso del suono.
 | **ENV** | A, D, S, R, uno solo per filtro e volume |
 | **CHORUS** | OFF, I, II, I+II: il colore anni '80 |
 | **ARPEGGIO** | ON, HOLD, MODE (UP, DOWN, U&D, RND), RANGE 1–3 ottave, RATE |
-| **VOICE** | MODE (POLY, UNISON, MONO), DETUNE (per l'unison), GLIDE, BEND (escursione del pitch bend) |
+| **VOICE** | MODE (POLY, UNISON, MONO), DETUNE (per l'unison), GLIDE, BEND (escursione del pitch bend), **DRIFT** |
 
 **I fader**: trascina il cappuccio o clicca sulla guida; **Maiusc** per la regolazione fine; rotella del mouse per i piccoli passi; **doppio clic** per il valore iniziale. Mentre muovi un comando, il display mostra nome e valore.
 
 **Rotelle BEND e MOD** a sinistra della tastiera: seguono quelle della tastiera MIDI. La MOD aggiunge vibrato senza ritardo.
+
+**DRIFT** è l'instabilità analogica: ogni voce è leggermente stonata e con il filtro un po' diverso dalle altre, e l'intonazione oscilla piano nel tempo, come nei synth veri dell'epoca. A zero le voci sono perfette e identiche; al 25% (il valore di partenza) il suono è vivo ma intonato; al massimo arriva a circa ±11 cent, un effetto "vintage" marcato. Il DRIFT si salva con la patch.
+
+## 2b. MIDI Learn e canale MIDI
+
+**MIDI Learn**: fai **clic destro** su un comando (fader, selettore o pulsante): lampeggia e il display chiede di muovere una manopola. Muovi una manopola o un fader della tastiera MIDI: da quel momento la muove lei. L'etichetta del comando diventa azzurra; passandoci sopra col mouse vedi il numero di CC.
+
+- **Togliere un collegamento**: clic destro sul comando, poi di nuovo clic destro mentre lampeggia.
+- **Annullare**: Esc.
+- Un CC comanda un solo controllo; collegarlo a un altro lo sposta.
+- Sui selettori la manopola scorre tra le posizioni; sui pulsanti (ON, HOLD, PULSE…) oltre metà corsa è acceso.
+- Mod wheel (CC1) e pedale di sustain (CC64) non si possono collegare: restano mod wheel e sustain.
+- I collegamenti valgono per tutte le patch e restano nel browser.
+
+**Canale MIDI**: in basso a sinistra, accanto al nome della tastiera, **CH OMNI** vuol dire che Vega ascolta tutti i canali. Clic per scegliere il canale 1, 2, … 16 (clic destro o Maiusc+clic per tornare indietro). Utile con Logic: Twin Core sul canale 1 e Vega sul 2, per esempio. Nella S33 Board puoi lasciarlo su OMNI: il canale si sceglie già nel modulo MIDI In.
 
 ## 3. Memoria
 
@@ -78,7 +93,7 @@ Vega è un modulo della board, con prese **MIDI**, **CLK** e **OUT**.
 Il service worker richiede `http://localhost` o `https://`:
 
 ```bash
-cd "v8 (1.1.1)"
+cd "v9 (1.2.0)"
 python3 -m http.server 8000
 # apri http://localhost:8000 in Chrome → menu ⋮ → Installa S33 - Vega
 ```

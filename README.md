@@ -13,6 +13,7 @@ Made for **Chrome on the Mac** with a MIDI keyboard. It is a **PWA** in a single
 - 8 voices in one AudioWorklet: band-limited DCO (saw, pulse with PWM, sub, noise), 4-step HPF, 24 dB resonant ladder VCF with envelope polarity, VCA env/gate, ADSR, LFO with delay
 - Stereo **chorus I / II / I+II** (Juno-style)
 - **Arpeggiator** (up, down, up & down, random; 1–3 octaves; hold) and **Poly / Unison / Mono** with detune and glide
+- **MIDI Learn** (right-click any control, move a knob), MIDI channel select, adjustable **analog drift**
 - **Memory**: factory bank A, user banks B–D, write protection for unsaved sounds, save/load to file, MIDI Program Change 0–31
 - **Juno-106 import**: `.106` libraries and `.syx` patch dumps, with a browsable library
 - Board-ready: inside the **S33 - Board** it uses the shared audio engine and MIDI, and its arpeggiator follows the Clock
@@ -26,7 +27,7 @@ Made for **Chrome on the Mac** with a MIDI keyboard. It is a **PWA** in a single
 ### Install as an app
 
 ```bash
-cd "v8 (1.1.1)"
+cd "v9 (1.2.0)"
 python3 -m http.server 8000
 # open http://localhost:8000 in Chrome → ⋮ menu → Install S33 - Vega
 ```

@@ -159,6 +159,12 @@
   .k.b{background:linear-gradient(#2f3138,#0c0d10 90%);height:62%;z-index:2;border-radius:0 0 4px 4px;box-shadow:0 3px 4px #0008}
   .k.down.w{background:linear-gradient(#d5ecff,#a9d4ff)}
   .k.down.b{background:linear-gradient(#335a7a,#1a2f42)}
+  .ctl.learn,.opt.learn{outline:1px dashed var(--vfd);outline-offset:3px;border-radius:4px;animation:lrn .6s steps(1) infinite}
+  @keyframes lrn{50%{outline-color:transparent}}
+  .ctl.cc > .lab{color:var(--vfd);text-shadow:0 0 6px #7ff3ff66}
+  .opt.cc{color:var(--vfd)}
+  .mch{background:none;border:1px solid #2c2f37;border-radius:3px;color:var(--quiet);font:600 11px "Barlow Condensed",sans-serif;letter-spacing:.12em;padding:1px 7px;margin-left:10px;cursor:pointer}
+  .mch:hover{color:var(--ink)}
   .foot{display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--quiet);letter-spacing:.08em}
 </style>
 </head>
@@ -208,7 +214,7 @@
     </div>
     <div class="kb" id="kb"></div>
   </div>
-  <div class="foot"><span id="midi">MIDI: —</span><span>KEYS A–K · Z/X OCTAVE · SPACE SUSTAIN · DOUBLE-CLICK A FADER TO RESET · SHIFT-DRAG = FINE</span></div>
+  <div class="foot"><span><span id="midi">MIDI: —</span><button class="mch" id="mch" title="MIDI channel Vega listens to (click to change)">CH OMNI</button></span><span>KEYS A–K · Z/X OCTAVE · SPACE SUSTAIN · DOUBLE-CLICK A FADER TO RESET · SHIFT-DRAG = FINE · RIGHT-CLICK A CONTROL = MIDI LEARN</span></div>
 </div></div>
 </div></div>
 
@@ -226,7 +232,7 @@ class PolyS33 extends AudioWorkletProcessor {
     this.p = {saw:1,pulse:0,pw:0,pwmSrc:1,sub:0.3,noise:0,range:1,hpf:0,cutoff:2400,res:0.2,envAmt:0.35,key:0.5,
               vcaGate:0,envPol:0,level:0.7,vel:0.5,a:0.01,d:0.4,s:0.6,r:0.4,
               lfoRate:2,lfoDelay:0,lfoWave:0,dcoLfo:0,vcfLfo:0,chorus:1,mod:0,
-              voiceMode:0,detune:0.3,glide:0,arpOn:0,arpMode:0,arpRange:1,arpRate:120,arpHold:0};
+              voiceMode:0,detune:0.3,glide:0,arpOn:0,arpMode:0,arpRange:1,arpRate:120,arpHold:0,drift:0.25};
     // mono / unison note stack and arpeggiator state
     this.stack = []; this.monoVel = 0.8;
     this.arpKeys = []; this.arpNotes = []; this.arpPos = 0; this.arpCount = 0; this.arpCur = -1; this.arpOff = 0; this.arpVel = 0.8; this.arpTick = 0;
@@ -239,7 +245,7 @@ class PolyS33 extends AudioWorkletProcessor {
     this.v = [];
     for (let i = 0; i < 8; i++) this.v.push({note:-1,gate:false,held:false,vel:0,f:440,ph:Math.random(),sp:0,
       env:0,g:0,st:0,t:0,s1:0,s2:0,s3:0,s4:0,y4:0,hl:0,ld:0,fc:440,idx:i,
-      drift:Math.pow(2,(Math.random()-0.5)*0.004)});
+      drift:1, ds:Math.random()*2-1, dc:Math.random()*2-1, wan:0, wt:0});   // drift: own tuning, own filter, slow wander
     this.port.onmessage = e => this.msg(e.data);
   }
   msg(m){
@@ -425,8 +431,12 @@ class PolyS33 extends AudioWorkletProcessor {
       if (v.st === 0) continue;
       v.fc = v.f + (v.fc - v.f) * gk;                                   // portamento
       const spread = uni ? Math.pow(2, (v.idx / 7 - 0.5) * 2 * p.detune * 0.4 / 12) : 1;  // up to ±40 cents
-      const dt0 = v.fc * spread * mul / sr;
-      const kt = Math.pow(2, p.key * (v.note - 60) / 12) * base;
+      // analog drift: each voice slightly out of tune (fixed + slow wander, up to ~±11 cents) and with its own cutoff
+      if (Math.random() < N / (sr * 0.7)) v.wt = Math.random() * 2 - 1;
+      v.wan += (v.wt - v.wan) * (N / (sr * 0.5));
+      const dr = p.drift;
+      const dt0 = v.fc * spread * mul / sr * (dr ? Math.pow(2, dr * (v.ds * 7 + v.wan * 4) / 1200) : 1);
+      const kt = Math.pow(2, p.key * (v.note - 60) / 12) * base * (dr ? Math.pow(2, dr * v.dc * 0.25) : 1);
       const velG = 1 - p.vel + p.vel * v.vel;
       const gt = v.gate ? 1 : 0;
       const ld0 = v.ld; v.ld = Math.min(1, v.ld + ldInc);
@@ -584,6 +594,7 @@ const SECTIONS2 = [
     {type:'slider', k:'detune', label:'DETUNE', def:0.3, map:v => v, fmt:v => '±' + Math.round(v * 40) + ' CENT'},
     {type:'slider', k:'glide', label:'GLIDE', def:0, map:v => v * v * 2, fmt:v => v < 0.002 ? 'OFF' : fmtS(v)},
     {type:'slider', k:'bendRange', label:'BEND', def:1 / 11, steps:11, map:v => Math.round(1 + v * 11), fmt:v => '±' + v + ' ST'},
+    {type:'slider', k:'drift', label:'DRIFT', def:0.25, map:v => v, fmt:v => v < 0.005 ? 'OFF · STABLE' : Math.round(v * 100) + '% · ±' + Math.round(v * 11) + ' CENT'},
   ]},
 ];
 
@@ -643,7 +654,7 @@ function makeFader(it, secName){
   el.addEventListener('dblclick', () => set(it.def));
   el.addEventListener('wheel', e => { e.preventDefault(); set(v - Math.sign(e.deltaY) * (steps ? 1 / steps : 0.01)); }, {passive:false});
   loading = true; set(v, true); loading = false;
-  CTRL[it.k] = {it, get:() => v, set:nv => set(nv, true)};
+  CTRL[it.k] = {it, el, name:`${secName} ${it.label}`, get:() => v, set:nv => set(nv, true)};
   return el;
 }
 
@@ -672,7 +683,7 @@ for (const sec of SECS){
         box.appendChild(b); return b;
       });
       let cur = it.def;
-      CTRL[it.k] = {it, get:() => cur, set:val => {
+      CTRL[it.k] = {it, el:c, name:`${sec.name} ${it.label}`, get:() => cur, set:val => {
         const i = it.opts.findIndex(o => o[1] === val); if (i < 0) return;
         btns.forEach(x => x.classList.remove('on')); btns[i].classList.add('on'); cur = val; send(it.k, val);
       }};
@@ -686,7 +697,7 @@ for (const sec of SECS){
         b.innerHTML = `<span class="key"><span class="led"></span></span>${t.label}`;
         loading = true; send(t.k, t.def); loading = false;
         b.onclick = () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); send(t.k, on ? 1 : 0); show(`${sec.name} ${t.label}`, on ? 'ON' : 'OFF'); if (t.k === 'arpOn') kbKeys.forEach(k => k.classList.remove('down')); };
-        CTRL[t.k] = {it:t, get:() => b.classList.contains('on') ? 1 : 0, set:val => {
+        CTRL[t.k] = {it:t, el:b, name:`${sec.name} ${t.label}`, get:() => b.classList.contains('on') ? 1 : 0, set:val => {
           b.classList.toggle('on', !!val); send(t.k, val ? 1 : 0);
           if (t.k === 'arpOn') kbKeys.forEach(k => k.classList.remove('down'));
         }};
@@ -829,6 +840,8 @@ const modW = wheel(document.getElementById('modW'), false);
 /* ===================== MIDI ===================== */
 function onMIDI(e){
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
+  if (st < 0xf0 && midiCh && (st & 0x0f) !== midiCh - 1) return;          // MIDI channel filter
+  if (cmd === 0xb0 && learnCC(d1, d2)) return;                               // MIDI Learn
   if (cmd === 0xc0){ if (d1 < 32) loadSlot('ABCD'[d1 >> 3], d1 & 7); return; }
   if (cmd === 0x90 && d2 > 0) noteOn(d1, d2 / 127);
   else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) noteOff(d1);
@@ -1200,6 +1213,61 @@ importF.onchange = async () => {
   drawMem();
 })();
 
+
+
+/* ===================== MIDI LEARN + CHANNEL ===================== */
+// Right-click a control, then move a knob or fader on the MIDI keyboard: that CC now moves the control.
+// Right-click it again while it blinks = clear. Esc = cancel. The map is kept in the browser, for every patch.
+var MAPKEY = 's33-vega-midimap-v1', CHKEY = 's33-vega-midich-v1';
+var ccMap = readLS(MAPKEY) || {}, learnK = null;
+var midiCh = (readLS(CHKEY) | 0);                    // 0 = omni, 1..16
+const hostOf = k => { const e = CTRL[k].el; return e.classList.contains('fd') ? e.parentNode : e; };
+function drawMap(){
+  for (const k of KEYS){ const h = hostOf(k); h.classList.remove('cc', 'learn'); h.removeAttribute('title'); }
+  for (const cc in ccMap){ const k = ccMap[cc]; if (!CTRL[k]) continue; const h = hostOf(k); h.classList.add('cc'); h.title = `MIDI CC ${cc} · right-click to change`; }
+  if (learnK) hostOf(learnK).classList.add('learn');
+}
+function unmap(k){ for (const cc in ccMap) if (ccMap[cc] === k) delete ccMap[cc]; }
+function armLearn(k){
+  if (learnK === k){
+    unmap(k); writeLS(MAPKEY, ccMap); learnK = null; drawMap();
+    show('MIDI LEARN', `${CTRL[k].name} · CLEARED`); return;
+  }
+  learnK = k; drawMap();
+  const now = Object.keys(ccMap).find(cc => ccMap[cc] === k);
+  show(`LEARN ${CTRL[k].name}`, `MOVE A KNOB${now ? ` (NOW CC ${now})` : ''} · RIGHT-CLICK AGAIN = CLEAR · ESC = CANCEL`, true);
+}
+function cancelLearn(){ if (!learnK) return false; learnK = null; drawMap(); show('MIDI LEARN', 'CANCELLED'); return true; }
+function learnCC(cc, val){
+  if (cc === 1 || cc === 64 || cc >= 120) return false;     // mod wheel, sustain and channel messages stay theirs
+  if (learnK){
+    const k = learnK; unmap(k); ccMap[cc] = k; writeLS(MAPKEY, ccMap); learnK = null; drawMap();
+    show('MIDI LEARN', `${CTRL[k].name} ← CC ${cc}`); applyCC(k, val, true); return true;
+  }
+  const k = ccMap[cc]; if (!k || !CTRL[k]) return false;
+  applyCC(k, val); return true;
+}
+function applyCC(k, val, quiet){
+  const c = CTRL[k], it = c.it, x = val / 127;
+  if (it.type === 'slider'){ c.set(x); if (!quiet) show(c.name, it.fmt(it.map(c.get()))); }
+  else if (it.type === 'switch'){
+    const o = it.opts[Math.min(it.opts.length - 1, Math.floor(x * it.opts.length))];
+    if (c.get() !== o[1]){ c.set(o[1]); if (!quiet) show(c.name, o[0]); }
+  } else {
+    const on = val >= 64 ? 1 : 0;
+    if (c.get() !== on){ c.set(on); if (!quiet) show(c.name, on ? 'ON' : 'OFF'); }
+  }
+}
+for (const k of KEYS) hostOf(k).addEventListener('contextmenu', e => { e.preventDefault(); armLearn(k); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') cancelLearn(); });
+drawMap();
+
+const mchB = document.getElementById('mch');
+const drawCh = () => mchB.textContent = midiCh ? `CH ${midiCh}` : 'CH OMNI';
+function setCh(c){ midiCh = (c + 17) % 17; writeLS(CHKEY, midiCh); drawCh(); show('MIDI CHANNEL', midiCh ? `CHANNEL ${midiCh} ONLY` : 'OMNI · ALL CHANNELS'); }
+mchB.onclick = e => setCh(midiCh + (e.shiftKey ? -1 : 1));
+mchB.oncontextmenu = e => { e.preventDefault(); setCh(midiCh - 1); };
+drawCh();
 
 /* ===================== S33 BOARD ===================== */
 // Inside the board: audio and MIDI come from the board; the arpeggiator follows the Clock when its CLK jack is patched.
