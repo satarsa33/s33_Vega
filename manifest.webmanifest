@@ -1,0 +1,17 @@
+{
+  "name": "S33 - Vega",
+  "short_name": "Vega",
+  "description": "An 8-voice polyphonic synthesizer in the style of the early 1980s, with arpeggiator, chorus, patch memory and Juno-106 patch import.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0c0d11",
+  "theme_color": "#15171c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
